@@ -1,3 +1,26 @@
+# Dark Forest FHE
+
+## Gameplay
+1. Setup
+The galactic battlefield is initialized on a 128 x 128 grid, representing the vast expanse of a war-torn sector of the universe.
+- Random Placements: Two advanced spaceships, each controlled by rival alien civilizations, are deployed at random coordinates. These two flagships, piloted by your civilization's finest, are tasked with conquering 10 planets scattered across the starfield. Ensure no overlap or close proximity between spaceships and planets to give each faction a fighting chance.
+
+2. Movement and Vision
+The mobility and vision of a spaceship grow exponentially as its technology advances. A spaceship evolves by extracting resources from planets, improving its capability to explore and conquer.
+- Tech Advancement: At round N, a spaceship that has colonized M planets can move and see within a range where ΔX + ΔY < 2^(N-1 + M). This growing ability represents the technological leap required to thrive in a hostile, unknown universe.
+- Detection: To detect nearby objects (other spaceships or unclaimed planets), the player must query the smart contract. If the objects fall within their visible range, their coordinates and types are decrypted and revealed. This vision simulates the ever-expanding scanning field of a ship in a cosmic battlefield, equipped with long-range sensors powered by quantum decryption algorithms.
+
+3. Combat and Endgame
+In this alien war for domination, the strength of a civilization is measured by its reach.
+- Combat: Spaceships with greater technological prowess (i.e., a wider vision range) automatically win battles when they encounter enemy ships. In cases where both have equal vision, the clash results in a stalemate, symbolizing an evenly matched technological race, leading to an intense battle of attrition.
+- Endgame: Victory is declared when one civilization's flagship prevails in battle, establishing dominance over the starfield. Alternative endgames could be introduced later, such as controlling a majority of planets or reaching a certain tech level.
+
+## Future Expansion
+- Additional Flagships: Future versions could include multiple spaceships per civilization, introducing the concept of coordinated fleets and multi-front galactic warfare.
+- Planetary Resources: Planets could yield unique resources, such as ancient alien artifacts or energy-rich minerals, with varying effects on spaceship advancement and combat capabilities.
+- Planet trace: player can see the planet is landed by other players before
+
+
 # Foundry Template [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
 
 [gitpod]: https://gitpod.io/#https://github.com/fhenixprotocol/fhenix-foundry-template
