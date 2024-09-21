@@ -28,6 +28,46 @@ In this alien war for domination, the strength of a civilization is measured by 
 - Planetary Resources: Planets could yield unique resources, such as ancient alien artifacts or energy-rich minerals, with varying effects on spaceship advancement and combat capabilities.
 - Planet trace: player can see the planet is landed by other players before
 
+## Smart contract
+
+### Overview
+DarkForestFHE is a blockchain-based game that leverages Fully Homomorphic Encryption (FHE) to create a private, strategic space exploration game. Two players navigate spaceships through a 128x128 grid, claiming planets and engaging in combat, all while keeping their positions and actions encrypted.
+
+### FHE Relevance
+- **Privacy Preservation**: Player positions, tech levels, and actions are encrypted, preventing information leakage.
+- **On-chain Computations**: Game logic is executed on encrypted data, allowing for complex interactions without revealing sensitive information.
+- **Secure State Updates**: Game state changes (movement, planet claiming, combat) occur without exposing the underlying data.
+
+### Key Functions
+
+1. `initializeGame(address player1, address player2)`:
+   - Sets up the game board with encrypted spaceship positions and planet locations.
+
+2. `move(inEuint128 newX, inEuint128 newY)`:
+   - Allows players to move their spaceships using encrypted coordinates.
+   - Checks if the move is within the allowed range based on the player's tech level.
+
+3. `checkForPlanetClaim()`:
+   - Verifies if a player's position matches a planet's location and updates the game state accordingly.
+
+4. `checkForCombat()`:
+   - Determines if spaceships are within combat range and resolves combat based on tech levels.
+
+5. `queryVision(Permission calldata perm)`:
+   - Returns encrypted information about visible planets within a player's range.
+
+6. `getMySpaceship(Permission calldata perm)`:
+   - Allows a player to retrieve their encrypted spaceship coordinates.
+
+### FHE Operations
+- Utilizes `FHE.asEuint128`, `FHE.asEbool` for encryption.
+- Employs `FHE.add`, `FHE.sub`, `FHE.lt`, `FHE.gte`, `FHE.eq` for encrypted computations.
+- Uses `FHE.select` for conditional operations on encrypted data.
+- Implements `FHE.req` for encrypted requirement checks.
+
+This smart contract demonstrates the power of FHE in creating a fully on-chain game with privacy-preserving mechanics, enabling complex gameplay without compromising player information.
+
+
 ## Findings, feedback during the developments
 Wanted to include this section to provide some feedbacks and nuances in terms of developer experience, as I believe it is quote a part of the purpose for sponsoring the hackathon
 
@@ -65,31 +105,6 @@ Wanted to include this section to provide some feedbacks and nuances in terms of
   reference: [here](https://github.com/hcheng826/fhenix-dark-forest/blob/e10065f72351c8d1c65881395ed42046abfabf0f/src/DarkForestFHE.sol#L212-L214) and [here](https://github.com/hcheng826/fhenix-dark-forest/blob/e10065f72351c8d1c65881395ed42046abfabf0f/test/DarkForestFHE.t.sol#L144-L146)
   
 3. `Console.sol` doesn't compile for Foundry. Not sure if it is expected behavior. Understand that it is meant to be used with Fhenix's Localfhenix Environment, not sure if any special comfiguration about compiler is needed to make it compatible.
-
-
-# Foundry Template [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
-
-[gitpod]: https://gitpod.io/#https://github.com/fhenixprotocol/fhenix-foundry-template
-[gitpod-badge]: https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-FFB45B?logo=gitpod
-[gha]: https://github.com/fhenixprotocol/fhenix-foundry-template/actions
-[gha-badge]: https://github.com/fhenixprotocol/fhenix-foundry-template/actions/workflows/ci.yml/badge.svg
-[foundry]: https://getfoundry.sh/
-[foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
-[license]: https://opensource.org/licenses/MIT
-[license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
-
-Fhenix provides a Foundry-based template for developing Solidity smart contracts and includes sensible defaults. Links
-are provided to specific topics for further exploration.
-
-## What's Inside
-
-- [Forge](https://github.com/foundry-rs/foundry/blob/master/forge): Tools to compile, test, fuzz, format, and deploy
-  smart contracts.
-- [Forge Std](https://github.com/foundry-rs/forge-std): A collection of helpful contracts and utilities for testing.
-- [Prettier](https://github.com/prettier/prettier): A code formatter for non-Solidity files.
-- [Solhint](https://github.com/protofire/solhint): A linter for Solidity code.
-- [PermissionHelper.sol](./util/PermissionHelper.sol): Utilities for managing permissions related to FHE operations.
-- [FheHelper.sol](./util/FheHelper.sol): Utilities for simulating FHE operations.
 
 ## Getting Started
 
