@@ -141,8 +141,7 @@ contract DarkForestFHETest is Test, FheEnabled {
         vm.stopPrank();
     }
 
-    // Helper function to encrypt uint128 values
-    // function encrypt128(uint128 value) internal pure returns (inEuint128 memory) {
-    //     return inEuint128(FHE.asEuint128(value));
-    // }
+    function testReq() public {
+        game.reqTest();
+    }
 }

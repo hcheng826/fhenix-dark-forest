@@ -208,4 +208,8 @@ contract DarkForestFHE is Permissioned {
         // return (FHE.sealoutput(ship.x, perm.publicKey), FHE.sealoutput(ship.y, perm.publicKey));
         return (ship.x.seal(perm.publicKey), ship.y.seal(perm.publicKey));
     }
+
+    function reqTest() public {
+        FHE.req(FHE.asEbool(false));
+    }
 }
