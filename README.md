@@ -1,6 +1,14 @@
 # Dark Forest FHE
 
+## Foreword
+- For this submission I am mostly focusing on smart contract development as I encounter quite some trictions while trying to set up the frontend for Fhenix. Including minor flaws in provided templates, difficuties on downloading the docker container for the node to run locally due to slow network at the venue.
+- This project is inspired by the game Dark Forest: https://zkga.me/. It's a game originated from the concept "Dark Forest" in science fiction "3 Body". Where in the universe the civilizations in the space try to hide their activities and traces while advancing their techinology.
+- It could be a perfect use case for illustrating the concept of FHE. Using FHE we can create a decentralized setup for this game. When the spaceships travel in the space, the smart contract could compute the movement of the spaceship, without revealing it's exact location, which is exactly what FHE does.
+
 ## Gameplay
+
+Here's a very simplified version of the game design for the course of hackathon.
+
 1. Setup
 The galactic battlefield is initialized on a 128 x 128 grid, representing the vast expanse of a war-torn sector of the universe.
 - Random Placements: Two advanced spaceships, each controlled by rival alien civilizations, are deployed at random coordinates. These two flagships, piloted by your civilization's finest, are tasked with conquering 10 planets scattered across the starfield. Ensure no overlap or close proximity between spaceships and planets to give each faction a fighting chance.
@@ -19,6 +27,44 @@ In this alien war for domination, the strength of a civilization is measured by 
 - Additional Flagships: Future versions could include multiple spaceships per civilization, introducing the concept of coordinated fleets and multi-front galactic warfare.
 - Planetary Resources: Planets could yield unique resources, such as ancient alien artifacts or energy-rich minerals, with varying effects on spaceship advancement and combat capabilities.
 - Planet trace: player can see the planet is landed by other players before
+
+## Findings, feedback during the developments
+Wanted to include this section to provide some feedbacks and nuances in terms of developer experience, as I believe it is quote a part of the purpose for sponsoring the hackathon
+
+1. All the frontend examples, templates don't seem to work directly. I tried the [hardhat-template](https://github.com/FhenixProtocol/fhenix-hardhat-example), and the examples of FHERC-20 and Blind auction found [here](https://docs.fhenix.zone/docs/devdocs/Examples%20and%20References/Examples-fheDapps). The live hosted demo page couldn't successfully trigger my wallet pop-up and connect to the site. Some error in detecting the wallet, and also error while adding the network to MetaMask, the network ID returned from the rpc endpoint is not consistent to the one proposed by the frontend site.
+
+2. Understand the support for Foundry is WIP. Sharing some naunces I discovered along my development experience.
+  - The `decrypt()` function always decrypt to `0` for `euint8`. I changed it to `euint238` and it could successfully decrypt to correct value
+  - A useful helper function for `euint*` operation is `absDiff()`. I tried to implemented it myself and this doesn't work:
+  ```Solidity
+  function absDiff(euint128 a, euint128 b) public pure returns (euint128) {
+        // Select the correct result
+        ebool aLtB = FHE.lt(a, b);
+        return FHE.select(aLtB, b - a, a - b)
+    }
+  ```
+  Since both branches will be computed and underflow will always happen for either of the branch. Need to manually assign the larger and smaller value and substract from there.
+  ```Solidity
+  function absDiff(euint128 a, euint128 b) public pure returns (euint128) {
+        // Select the correct result
+        ebool aLtB = FHE.lt(a, b);
+
+        // Add the maximum value to both a and b to prevent underflow
+        euint128 largerValue = FHE.select(aLtB, b, a);
+        euint128 smallerValue = FHE.select(aLtB, a, b);
+
+        return FHE.sub(largerValue, smallerValue);
+  }
+  ```
+  - `FHE.req()` couldn't revert correctly. Not sure if it's Foundry specific issue. The below doesn't revert.
+  ```Solidity
+  function reqTest() public {
+      FHE.req(FHE.asEbool(false));
+  }
+  ```
+  reference: [here](https://github.com/hcheng826/fhenix-dark-forest/blob/e10065f72351c8d1c65881395ed42046abfabf0f/src/DarkForestFHE.sol#L212-L214) and [here](https://github.com/hcheng826/fhenix-dark-forest/blob/e10065f72351c8d1c65881395ed42046abfabf0f/test/DarkForestFHE.t.sol#L144-L146)
+  
+3. `Console.sol` doesn't compile for Foundry. Not sure if it is expected behavior. Understand that it is meant to be used with Fhenix's Localfhenix Environment, not sure if any special comfiguration about compiler is needed to make it compatible.
 
 
 # Foundry Template [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
