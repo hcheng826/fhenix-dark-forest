@@ -3,20 +3,28 @@ pragma solidity ^0.8.0;
 
 import "@fhenixprotocol/contracts/FHE.sol";
 import "@fhenixprotocol/contracts/access/Permissioned.sol";
+import { console2 } from "forge-std/src/console2.sol";
+import { Console } from "@fhenixprotocol/contracts/utils/debug/Console.sol";
 
-uint8 constant GRID_SIZE = 128;
+uint128 constant GRID_SIZE = 128;
 
 library RandomMock {
-    function getFakeRandomU8(uint256 seed) internal view returns (euint8) {
+    function getFakeRandomU8(uint256 seed) internal view returns (euint128) {
         uint256 randomValue = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, seed)));
-        return FHE.asEuint8(uint8(randomValue % GRID_SIZE));
+        return FHE.asEuint128(uint128(randomValue % GRID_SIZE));
     }
 }
 
 library FHEHelper {
-    function diffAbsEuint8(euint8 a, euint8 b) public pure returns (euint8) {
-        ebool aLtB = a.lt(b);
-        return FHE.select(aLtB, b - a, a - b);
+    function diffAbsEuint128(euint128 a, euint128 b) public pure returns (euint128) {
+        // Select the correct result
+        ebool aLtB = FHE.lt(a, b);
+
+        // Add the maximum value to both a and b to prevent underflow
+        euint128 largerValue = FHE.select(aLtB, b, a);
+        euint128 smallerValue = FHE.select(aLtB, a, b);
+
+        return FHE.sub(largerValue, smallerValue);
     }
 }
 
@@ -24,17 +32,16 @@ contract DarkForestFHE is Permissioned {
     using RandomMock for uint256;
 
     struct Spaceship {
-        euint8 x;
-        euint8 y;
-        euint8 techLevel;
-        eaddress owner;
-        ebool active;
+        euint128 x;
+        euint128 y;
+        euint128 techLevel;
+        address owner;
         uint256 round;
     }
 
     struct Planet {
-        euint8 x;
-        euint8 y;
+        euint128 x;
+        euint128 y;
         ebool claimed;
     }
 
@@ -60,22 +67,22 @@ contract DarkForestFHE is Permissioned {
     }
 
     function initializeGame(address player1, address player2) private {
+        euint128 a = RandomMock.getFakeRandomU8(uint256(keccak256(abi.encodePacked("player1_x", player1))));
+
         // Initialize spaceships at random positions
         spaceships[player1] = Spaceship({
             x: RandomMock.getFakeRandomU8(uint256(keccak256(abi.encodePacked("player1_x", player1)))),
             y: RandomMock.getFakeRandomU8(uint256(keccak256(abi.encodePacked("player1_y", player1)))),
-            techLevel: FHE.asEuint8(0),
-            owner: FHE.asEaddress(player1),
-            active: FHE.asEbool(true),
+            techLevel: FHE.asEuint128(0),
+            owner: player1,
             round: 1
         });
 
         spaceships[player2] = Spaceship({
             x: RandomMock.getFakeRandomU8(uint256(keccak256(abi.encodePacked("player2_x", player2)))),
             y: RandomMock.getFakeRandomU8(uint256(keccak256(abi.encodePacked("player2_y", player2)))),
-            techLevel: FHE.asEuint8(0),
-            owner: FHE.asEaddress(player2),
-            active: FHE.asEbool(true),
+            techLevel: FHE.asEuint128(0),
+            owner: player2,
             round: 1
         });
 
@@ -91,18 +98,17 @@ contract DarkForestFHE is Permissioned {
         emit GameStarted(player1, player2);
     }
 
-    function move(inEuint8 calldata newX, inEuint8 calldata newY) public {
+    function move(inEuint128 calldata newX, inEuint128 calldata newY) public {
         Spaceship storage ship = spaceships[msg.sender];
-        FHE.req(ship.active);
 
-        euint8 deltaX = FHEHelper.diffAbsEuint8(FHE.asEuint8(newX), ship.x);
-        euint8 deltaY = FHEHelper.diffAbsEuint8(FHE.asEuint8(newY), ship.y);
-        euint8 movementRange = FHE.asEuint8(uint8(2 ** (ship.round - 1 + FHE.decrypt(ship.techLevel))));
+        euint128 deltaX = FHEHelper.diffAbsEuint128(FHE.asEuint128(newX), ship.x);
+        euint128 deltaY = FHEHelper.diffAbsEuint128(FHE.asEuint128(newY), ship.y);
+        euint128 movementRange = FHE.asEuint128(uint128(2 ** (ship.round - 1 + FHE.decrypt(ship.techLevel))));
 
         FHE.req(FHE.lte(FHE.add(deltaX, deltaY), movementRange));
 
-        ship.x = FHE.asEuint8(newX);
-        ship.y = FHE.asEuint8(newY);
+        ship.x = FHE.asEuint128(newX);
+        ship.y = FHE.asEuint128(newY);
 
         checkForPlanetClaim();
         checkForCombat();
@@ -116,7 +122,7 @@ contract DarkForestFHE is Permissioned {
             ebool canClaim = FHE.and(samePosition, FHE.not(planets[i].claimed));
 
             planets[i].claimed = FHE.asEbool(true);
-            ship.techLevel = FHE.select(canClaim, FHE.add(ship.techLevel, FHE.asEuint8(1)), ship.techLevel);
+            ship.techLevel = FHE.select(canClaim, FHE.add(ship.techLevel, FHE.asEuint128(1)), ship.techLevel);
         }
     }
 
@@ -128,14 +134,15 @@ contract DarkForestFHE is Permissioned {
         }
 
         // Calculate distance between the two ships
-        euint8 distance = FHE.add(FHEHelper.diffAbsEuint8(ship1.x, ship2.x), FHEHelper.diffAbsEuint8(ship1.y, ship2.y));
+        euint128 distance =
+            FHE.add(FHEHelper.diffAbsEuint128(ship1.x, ship2.x), FHEHelper.diffAbsEuint128(ship1.y, ship2.y));
 
         // Determine which ship has the higher tech level
         ebool ship1HigherTech = FHE.gte(ship1.techLevel, ship2.techLevel);
 
         // Calculate vision range based on the higher tech level
-        euint8 higherTechLevel = FHE.select(ship1HigherTech, ship1.techLevel, ship2.techLevel);
-        euint8 visionRange = FHE.asEuint8(uint8(2 ** (ship1.round - 1 + FHE.decrypt(higherTechLevel))));
+        euint128 higherTechLevel = FHE.select(ship1HigherTech, ship1.techLevel, ship2.techLevel);
+        euint128 visionRange = FHE.asEuint128(uint128(2 ** (ship1.round - 1 + FHE.decrypt(higherTechLevel))));
 
         // Check if ships are in range
         ebool inRange = FHE.lte(distance, visionRange);
@@ -150,17 +157,13 @@ contract DarkForestFHE is Permissioned {
     }
 
     function endGame(address winner) private {
-        // Deactivate both ships
-        spaceships[player1].active = FHE.asEbool(false);
-        spaceships[player2].active = FHE.asEbool(false);
-
         emit GameEnded(winner);
         // Additional end game logic can be added here
     }
 
     function queryVision(Permission calldata perm) public view onlySender(perm) returns (string[][] memory) {
         Spaceship storage ship = spaceships[msg.sender];
-        uint8 visionRange = uint8(2 ** (ship.round - 1 + FHE.decrypt(ship.techLevel)));
+        uint128 visionRange = uint128(2 ** (ship.round - 1 + FHE.decrypt(ship.techLevel)));
 
         // Create an array to store visible objects
         string[][] memory visiblePlanets;
@@ -172,7 +175,7 @@ contract DarkForestFHE is Permissioned {
                 string[] memory planetInfo = new string[](3);
                 planetInfo[0] = planets[i].x.seal(perm.publicKey);
                 planetInfo[1] = planets[i].y.seal(perm.publicKey);
-                planetInfo[2] = FHE.asEuint8(uint8(i)).seal(perm.publicKey); // Planet index
+                planetInfo[2] = FHE.asEuint128(uint128(i)).seal(perm.publicKey); // Planet index
                 visiblePlanets[planetIndex] = planetInfo;
                 planetIndex++;
             }
@@ -182,16 +185,16 @@ contract DarkForestFHE is Permissioned {
         return visiblePlanets;
     }
 
-    function isInRange(Spaceship storage ship, Planet storage planet, uint8 range) private view returns (bool) {
-        euint8 deltaX = FHEHelper.diffAbsEuint8(ship.x, planet.x);
-        euint8 deltaY = FHEHelper.diffAbsEuint8(ship.y, planet.y);
-        return FHE.decrypt(FHE.lte(FHE.add(deltaX, deltaY), FHE.asEuint8(range)));
+    function isInRange(Spaceship storage ship, Planet storage planet, uint128 range) private view returns (bool) {
+        euint128 deltaX = FHEHelper.diffAbsEuint128(ship.x, planet.x);
+        euint128 deltaY = FHEHelper.diffAbsEuint128(ship.y, planet.y);
+        return FHE.decrypt(FHE.lte(FHE.add(deltaX, deltaY), FHE.asEuint128(range)));
     }
 
-    function isInRange(Spaceship storage ship1, Spaceship storage ship2, uint8 range) private view returns (bool) {
-        euint8 deltaX = FHEHelper.diffAbsEuint8(ship1.x, ship2.x);
-        euint8 deltaY = FHEHelper.diffAbsEuint8(ship1.y, ship2.y);
-        return FHE.decrypt(FHE.lte(FHE.add(deltaX, deltaY), FHE.asEuint8(range)));
+    function isInRange(Spaceship storage ship1, Spaceship storage ship2, uint128 range) private view returns (bool) {
+        euint128 deltaX = FHEHelper.diffAbsEuint128(ship1.x, ship2.x);
+        euint128 deltaY = FHEHelper.diffAbsEuint128(ship1.y, ship2.y);
+        return FHE.decrypt(FHE.lte(FHE.add(deltaX, deltaY), FHE.asEuint128(range)));
     }
 
     // This function allows players to get their own spaceship's data, return x and y coordinates
