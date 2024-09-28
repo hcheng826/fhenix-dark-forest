@@ -103,10 +103,10 @@ Wanted to include this section to provide some feedbacks and nuances in terms of
   }
   ```
   reference: [here](https://github.com/hcheng826/fhenix-dark-forest/blob/e10065f72351c8d1c65881395ed42046abfabf0f/src/DarkForestFHE.sol#L212-L214) and [here](https://github.com/hcheng826/fhenix-dark-forest/blob/e10065f72351c8d1c65881395ed42046abfabf0f/test/DarkForestFHE.t.sol#L144-L146)
-  
+
 3. `Console.sol` doesn't compile for Foundry. Not sure if it is expected behavior. Understand that it is meant to be used with Fhenix's Localfhenix Environment, not sure if any special comfiguration about compiler is needed to make it compatible.
 
-## Getting Started
+<!-- ## Getting Started
 
 To create a new repository using this template, click the
 [`Use this template`](https://github.com/fhenixprotocol/fhenix-foundry-template/generate) button at the top of the page.
@@ -352,4 +352,4 @@ $ bun run test:coverage:report
 - This project is licensed under MIT.
 - This project is based on the [Foundry Template](https://github.com/PaulRBerg/foundry-template)
 
-Copyright (c) 2024 Paul Razvan Berg License (MIT) https://github.com/PaulRBerg/foundry-template/blob/main/LICENSE.md
+Copyright (c) 2024 Paul Razvan Berg License (MIT) https://github.com/PaulRBerg/foundry-template/blob/main/LICENSE.md -->
